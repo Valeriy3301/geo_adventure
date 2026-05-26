@@ -1,26 +1,48 @@
 # Geo Data Transformer
 
-Python-based geo data engineering application for:
-- CRS transformations
-- GeoJSON processing
-- geometry enrichment
-- ETL-style geo pipelines
-- spatial analytics
-- export/report generation
+Geo Data Transformer is a Python-based geo-processing system that supports both:
 
-Technologies:
-- Python
-- Pandas
-- Shapely
-- PyProj
-- Docker
-- GitHub Actions
+- Local ETL execution (CLI mode)
+- Distributed asynchronous processing (RabbitMQ + Redis worker mode)
 
-Run locally:
+This project supports a hybrid execution model:
+
+### 1. Local Mode (Development / Testing)
+- Runs pipeline sequentially in a single process
+- No external services required
+
+### 2. Distributed Mode (Production)
+- RabbitMQ handles job queuing
+- Redis handles caching + idempotency
+- Worker processes consume geo-processing jobs asynchronously
+
+## Run Locally (CLI Mode)
 
 pip install -r requirements.txt
 python app.py
 
-Run with Docker:
+## Run Distributed System (Worker Mode)
 
-docker-compose up --build
+### Start infrastructure
+docker-compose up -d
+
+### Start worker
+python app.py worker
+
+## Submit Jobs (RabbitMQ)
+
+Jobs are submitted in JSON format:
+
+{
+  "input_file": "data/sample_geo.json",
+  "output_geojson": "outputs/out.json",
+  "output_csv": "outputs/out.csv",
+  "simplify_tolerance": 10
+}
+
+## Infrastructure Requirements (Distributed Mode)
+
+- Redis (caching + state management)
+- RabbitMQ (job queue)
+
+These can be started using Docker Compose.

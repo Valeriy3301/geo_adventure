@@ -10,5 +10,13 @@ venv/
 outputs/
 data/*.geojson
 data/*.csv
+
 *.log
+logs/
+
 todo.txt
+
+# Docker
+docker-compose.override.yml
+*.pid
+*.sock

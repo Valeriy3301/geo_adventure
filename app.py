@@ -1,26 +1,53 @@
 import json
 import math
+import redis
+import pika
+
+import pandas as pd
+
 from pathlib import Path
 from typing import Dict, List, Any
 
-import pandas as pd
 from shapely.geometry import shape, mapping
 from shapely.ops import transform
 from pyproj import Transformer
+
+
+
+
+class RedisCache:
+    def __init__(self, host="localhost", port=6379, db=0):
+        self.client = redis.Redis(host=host, port=port, db=db, decode_responses=True)
+
+    def get(self, key):
+        val = self.client.get(key)
+        return json.loads(val) if val else None
+
+    def set(self, key, value, ttl=3600):
+        self.client.set(key, json.dumps(value), ex=ttl)
+
+
+class RabbitMQConsumer:
+    def __init__(self, host="localhost", queue="geo_jobs"):
+        self.queue = queue
+
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
+
+        self.channel = self.connection.channel()
+        self.channel.queue_declare(queue=queue)
+
+    def consume(self, callback):
+        self.channel.basic_consume(
+            queue=self.queue, on_message_callback=callback, auto_ack=True
+        )
+        print("Waiting for geo jobs...")
+        self.channel.start_consuming()
 
 
 class GeoDataTransformer:
     """
     Geo-processing application for transforming, cleaning,
     analyzing and exporting GeoJSON datasets.
-
-    Features:
-    - CRS transformation
-    - Geometry simplification
-    - Area / length calculation
-    - Bounding box generation
-    - Feature filtering
-    - Export pipeline
     """
 
     def __init__(self):
@@ -44,144 +71,72 @@ class GeoDataTransformer:
         print(f"Loaded {len(self.features)} features")
 
     def transform_crs(self, source_epsg: str, target_epsg: str):
-        """
-        Example:
-        source_epsg='EPSG:4326'
-        target_epsg='EPSG:3857'
-        """
-
         transformer = Transformer.from_crs(source_epsg, target_epsg, always_xy=True)
 
         transformed_features = []
 
         for feature in self.features:
             geometry = shape(feature["geometry"])
-
             transformed_geometry = transform(transformer.transform, geometry)
 
-            transformed_feature = {
-                "type": "Feature",
-                "properties": feature.get("properties", {}),
-                "geometry": mapping(transformed_geometry),
-            }
-
-            transformed_features.append(transformed_feature)
+            transformed_features.append(
+                {
+                    "type": "Feature",
+                    "properties": feature.get("properties", {}),
+                    "geometry": mapping(transformed_geometry),
+                }
+            )
 
         self.features = transformed_features
-
         print(f"Transformed CRS: {source_epsg} -> {target_epsg}")
 
     def simplify_geometries(self, tolerance: float = 0.001):
-        simplified_features = []
+        simplified = []
 
         for feature in self.features:
             geometry = shape(feature["geometry"])
+            simplified_geom = geometry.simplify(tolerance, preserve_topology=True)
 
-            simplified_geometry = geometry.simplify(tolerance, preserve_topology=True)
+            simplified.append(
+                {
+                    "type": "Feature",
+                    "properties": feature.get("properties", {}),
+                    "geometry": mapping(simplified_geom),
+                }
+            )
 
-            simplified_feature = {
-                "type": "Feature",
-                "properties": feature.get("properties", {}),
-                "geometry": mapping(simplified_geometry),
-            }
-
-            simplified_features.append(simplified_feature)
-
-        self.features = simplified_features
-
+        self.features = simplified
         print(f"Simplified geometries with tolerance={tolerance}")
 
-    def filter_features(self, property_name: str, value: Any):
-        filtered = []
-
-        for feature in self.features:
-            properties = feature.get("properties", {})
-
-            if properties.get(property_name) == value:
-                filtered.append(feature)
-
-        self.features = filtered
-
-        print(f"Filtered dataset -> {len(filtered)} features")
-
     def enrich_features(self):
-        """
-        Adds:
-        - area
-        - perimeter
-        - centroid
-        - bounding box
-        """
-
         enriched = []
 
         for feature in self.features:
             geometry = shape(feature["geometry"])
+            props = feature.get("properties", {}).copy()
 
-            properties = feature.get("properties", {}).copy()
+            props["area"] = geometry.area
+            props["perimeter"] = geometry.length
+            props["bbox"] = geometry.bounds
+            props["centroid_x"] = geometry.centroid.x
+            props["centroid_y"] = geometry.centroid.y
 
-            properties["area"] = geometry.area
-            properties["perimeter"] = geometry.length
-            properties["bbox"] = geometry.bounds
-            properties["centroid_x"] = geometry.centroid.x
-            properties["centroid_y"] = geometry.centroid.y
-
-            enriched_feature = {
-                "type": "Feature",
-                "properties": properties,
-                "geometry": mapping(geometry),
-            }
-
-            enriched.append(enriched_feature)
-
-        self.features = enriched
-
-        print("Feature enrichment completed")
-
-    def validate_geometries(self):
-        valid = 0
-        invalid = 0
-
-        for feature in self.features:
-            geometry = shape(feature["geometry"])
-
-            if geometry.is_valid:
-                valid += 1
-            else:
-                invalid += 1
-
-        print("\nGeometry Validation")
-        print("---------------------")
-        print(f"Valid geometries:   {valid}")
-        print(f"Invalid geometries: {invalid}")
-
-    def dataset_statistics(self):
-        rows = []
-
-        for feature in self.features:
-            geometry = shape(feature["geometry"])
-
-            rows.append(
+            enriched.append(
                 {
-                    "geometry_type": geometry.geom_type,
-                    "area": geometry.area,
-                    "length": geometry.length,
+                    "type": "Feature",
+                    "properties": props,
+                    "geometry": mapping(geometry),
                 }
             )
 
-        df = pd.DataFrame(rows)
-
-        print("\nDataset Statistics")
-        print("------------------")
-        print(df.describe(include="all"))
-
-        return df
+        self.features = enriched
+        print("Feature enrichment completed")
 
     def export_geojson(self, output_path: str):
-        output = {"type": "FeatureCollection", "features": self.features}
-
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(output, f, indent=2)
+            json.dump(
+                {"type": "FeatureCollection", "features": self.features}, f, indent=2
+            )
 
         print(f"GeoJSON exported -> {output_path}")
 
@@ -190,46 +145,66 @@ class GeoDataTransformer:
 
         for feature in self.features:
             row = feature.get("properties", {}).copy()
-
             geometry = shape(feature["geometry"])
             row["geometry_type"] = geometry.geom_type
-
             rows.append(row)
 
-        df = pd.DataFrame(rows)
-        df.to_csv(output_path, index=False)
-
+        pd.DataFrame(rows).to_csv(output_path, index=False)
         print(f"CSV exported -> {output_path}")
 
 
 class GeoPipeline:
-    """
-    ETL-style pipeline for geo data engineering.
-    """
-
-    def __init__(self, transformer: GeoDataTransformer):
+    def __init__(self, transformer: GeoDataTransformer, cache: RedisCache = None):
         self.transformer = transformer
+        self.cache = cache
 
-    def run(self, input_file: str, output_geojson: str, output_csv: str):
-        print("\n=== GEO DATA PIPELINE STARTED ===\n")
+    def run(self, job: Dict[str, Any]):
+        input_file = job["input_file"]
+        output_geojson = job["output_geojson"]
+        output_csv = job["output_csv"]
+
+        cache_key = f"geo:job:{input_file}"
+
+        if self.cache:
+            cached = self.cache.get(cache_key)
+            if cached:
+                print("CACHE HIT -> skipping processing")
+                return cached
+
+        print("\n=== PIPELINE START ===\n")
 
         self.transformer.load_geojson(input_file)
-
-        self.transformer.validate_geometries()
-
         self.transformer.transform_crs("EPSG:4326", "EPSG:3857")
-
-        self.transformer.simplify_geometries(10)
-
+        self.transformer.simplify_geometries(job.get("simplify_tolerance", 10))
         self.transformer.enrich_features()
 
-        self.transformer.dataset_statistics()
-
         self.transformer.export_geojson(output_geojson)
-
         self.transformer.export_csv(output_csv)
 
+        result = {"status": "completed", "input": input_file}
+
+        if self.cache:
+            self.cache.set(cache_key, result)
+
         print("\n=== PIPELINE FINISHED ===")
+        return result
+
+
+def create_worker():
+    cache = RedisCache()
+    transformer = GeoDataTransformer()
+    pipeline = GeoPipeline(transformer, cache=cache)
+
+    def callback(ch, method, properties, body):
+        job = json.loads(body)
+        print(f"Received job: {job}")
+
+        try:
+            pipeline.run(job)
+        except Exception as e:
+            print(f"Job failed: {e}")
+
+    return callback
 
 
 def generate_sample_geojson(output_path: str):
@@ -278,16 +253,29 @@ def generate_sample_geojson(output_path: str):
 
 
 if __name__ == "__main__":
-    input_file = "sample_geo.json"
-    output_geojson = "transformed_geo.json"
-    output_csv = "geo_report.csv"
 
-    generate_sample_geojson(input_file)
+    import sys
 
-    transformer = GeoDataTransformer()
+    # MODE 1: worker mode (RabbitMQ)
+    if len(sys.argv) > 1 and sys.argv[1] == "worker":
+        consumer = RabbitMQConsumer()
+        consumer.consume(create_worker())
 
-    pipeline = GeoPipeline(transformer)
+    # MODE 2: local CLI pipeline mode
+    else:
+        input_file = "sample_geo.json"
+        output_geojson = "transformed_geo.json"
+        output_csv = "geo_report.csv"
 
-    pipeline.run(
-        input_file=input_file, output_geojson=output_geojson, output_csv=output_csv
-    )
+        generate_sample_geojson(input_file)
+
+        pipeline = GeoPipeline(GeoDataTransformer())
+
+        pipeline.run(
+            {
+                "input_file": input_file,
+                "output_geojson": output_geojson,
+                "output_csv": output_csv,
+                "simplify_tolerance": 10,
+            }
+        )

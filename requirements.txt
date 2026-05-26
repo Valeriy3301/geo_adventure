@@ -2,4 +2,6 @@ pandas
 shapely
 pyproj
 geopandas
+redis
+pika
 pyyaml

@@ -1,10 +1,13 @@
-# version: '3.9'
-#
-# services:
-#   geo-transformer:
-#     build: .
-#     container_name: geo-transformer
-#     volumes:
-#       - ./data:/app/data
-#       - ./outputs:/app/outputs
-#     command: python app.py
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
