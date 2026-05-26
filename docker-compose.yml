@@ -1,0 +1,10 @@
+# version: '3.9'
+#
+# services:
+#   geo-transformer:
+#     build: .
+#     container_name: geo-transformer
+#     volumes:
+#       - ./data:/app/data
+#       - ./outputs:/app/outputs
+#     command: python app.py
