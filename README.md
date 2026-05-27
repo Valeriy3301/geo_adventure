@@ -46,3 +46,10 @@ Jobs are submitted in JSON format:
 - RabbitMQ (job queue)
 
 These can be started using Docker Compose.
+
+## Testing
+
+Run the full test suite using pytest:
+
+```bash
+pytest -q (pytest -v)
