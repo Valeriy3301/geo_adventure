@@ -1,0 +1,79 @@
+pipeline:
+  name: geo-data-transformer
+
+  # CRS settings
+  crs:
+    source: "EPSG:4326"
+    target: "EPSG:3857"
+
+  # Geometry processing
+  geometry:
+    simplify_tolerance: 10
+    preserve_topology: true
+
+  # Feature enrichment toggles
+  enrichment:
+    enabled: true
+    compute_area: true
+    compute_perimeter: true
+    compute_centroid: true
+    compute_bbox: true
+
+  # Validation
+  validation:
+    enabled: true
+
+  # Caching (Redis)
+  cache:
+    enabled: true
+    ttl_seconds: 3600
+    key_prefix: "geo"
+
+  # IO configuration
+  io:
+    input_dir: "data"
+    output_dir: "outputs"
+
+  # Export formats
+  export:
+    geojson: true
+    csv: true
+
+  # Logging
+  logging:
+    level: "INFO"
+
+  todo:
+    architecture:
+      - "refactor into multi-stage DAG"
+      - "retry + dead-letter queue handling in rabbit"
+      - "add worker pool instead of single worker"
+      - "orchestration layer needed?"
+
+    processing:
+      - "support large GeoJSON streaming (no full in-memory load)"
+      - "geometry repair step (fix invalid polygons automatically)"
+      - "coordination control"
+
+    storage:
+      - "persist results into PostGIS for spatial querying (might be useful later)"
+
+    performance:
+      - "multiprocessing + vectorization"
+      - "cache transformation steps in Redis"
+      - "benchmark Shapely vs GeoPandas for large datasets"
+
+    observability:
+      - "add structured simple logging"
+      - "add metrics"
+      - "Prometheus + Grafana dashboards"
+      - "track failed jobs with correlation ids"
+
+    api:
+      - "FastAPI service for job submission for further development"
+
+    devx:
+      - "add pytest suite for GeoDataTransformer"
+      - "add pre-commit hooks (lint + format)"
+      - "add CI pipeline validation for sample GeoJSON"
+      - "generate type hints for all pipeline stages"
