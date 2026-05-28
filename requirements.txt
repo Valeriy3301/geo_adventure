@@ -1,7 +1,8 @@
 pandas
-shapely
 pyproj
-geopandas
-redis
 pika
 pyyaml
+pytest
+geopandas
+shapely
+redis
