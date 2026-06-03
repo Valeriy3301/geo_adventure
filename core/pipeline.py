@@ -1,5 +1,7 @@
 from typing import Dict, Any
 
+from core.clustering import GeoClusterer
+
 
 class GeoPipeline:
     """
@@ -12,19 +14,29 @@ class GeoPipeline:
 
     def run(self, job: Dict[str, Any]):
         input_file = job["input_file"]
-
         output_geojson = job["output_geojson"]
-
         output_csv = job["output_csv"]
 
-        simplify_tolerance = job.get(
-            "simplify_tolerance",
-            10
+        simplify_tolerance = job.get("simplify_tolerance", 10)
+
+        crs_source = job.get("crs_source", "EPSG:4326")
+        crs_target = job.get("crs_target", "EPSG:3857")
+
+        enable_enrichment = job.get("enable_enrichment", True)
+        enable_clustering = job.get("enable_clustering", False)
+        enable_stats = job.get("enable_stats", False)
+
+        cluster_eps = job.get("cluster_eps", 0.01)
+        cluster_min_samples = job.get("cluster_min_samples", 2)
+
+        # improved cache key (includes key pipeline params)
+        cache_key = (
+            f"geo:{input_file}:"
+            f"{simplify_tolerance}:"
+            f"{crs_source}->{crs_target}:"
+            f"cluster={enable_clustering}"
         )
 
-        cache_key = f"geo:{input_file}"
-
-        # Cache check
         if self.cache:
             cached = self.cache.get(cache_key)
 
@@ -39,37 +51,50 @@ class GeoPipeline:
         self.transformer.validate_geometries()
 
         self.transformer.transform_crs(
-            "EPSG:4326",
-            "EPSG:3857"
+            crs_source,
+            crs_target
         )
 
         self.transformer.simplify_geometries(
             simplify_tolerance
         )
 
-        self.transformer.enrich_features()
+        if enable_enrichment:
+            self.transformer.enrich_features()
 
-        self.transformer.dataset_statistics()
+        if enable_clustering:
+            clusterer = GeoClusterer(
+                eps=cluster_eps,
+                min_samples=cluster_min_samples
+            )
 
-        self.transformer.export_geojson(
-            output_geojson
-        )
+            self.transformer.features = clusterer.cluster(
+                self.transformer.features
+            )
 
-        self.transformer.export_csv(
-            output_csv
-        )
+            print("Clustering completed")
+
+        if enable_stats:
+            self.transformer.dataset_statistics()
+
+        self.transformer.export_geojson(output_geojson)
+        self.transformer.export_csv(output_csv)
 
         result = {
             "status": "completed",
             "input_file": input_file,
             "output_geojson": output_geojson,
             "output_csv": output_csv,
+            "crs": {
+                "source": crs_source,
+                "target": crs_target
+            },
+            "clustering_enabled": enable_clustering,
         }
 
-        # Store pipeline result
         if self.cache:
             self.cache.set(cache_key, result)
 
-        print("\n=== GEO PIPELINE FINISHED ===")
+        print("\n=== GEO PIPELINE FINISHED ===\n")
 
         return result

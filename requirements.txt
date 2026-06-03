@@ -6,3 +6,5 @@ pytest
 geopandas
 shapely
 redis
+scikit-learn
+numpy
