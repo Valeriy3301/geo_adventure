@@ -7,6 +7,8 @@ from shapely.geometry import shape, mapping
 from shapely.ops import transform
 from pyproj import Transformer
 
+from core.logger import get_logger
+
 
 class GeoDataTransformer:
     """
@@ -23,6 +25,7 @@ class GeoDataTransformer:
     def __init__(self):
         self.data = None
         self.features = []
+        self.logger = get_logger("geo-transformer")
 
     def load_geojson(self, filepath: str):
         path = Path(filepath)
@@ -38,7 +41,7 @@ class GeoDataTransformer:
 
         self.features = self.data.get("features", [])
 
-        print(f"Loaded {len(self.features)} features")
+        self.logger.info("Loaded %s features", len(self.features))
 
     def transform_crs(self, source_epsg: str, target_epsg: str):
         transformer = Transformer.from_crs(
@@ -65,7 +68,7 @@ class GeoDataTransformer:
 
         self.features = transformed
 
-        print(f"CRS transformed: {source_epsg} -> {target_epsg}")
+        self.logger.info("CRS transformed: %s -> %s", source_epsg, target_epsg)
 
     def simplify_geometries(self, tolerance: float = 0.001):
         simplified = []
@@ -86,7 +89,7 @@ class GeoDataTransformer:
 
         self.features = simplified
 
-        print(f"Geometries simplified (tolerance={tolerance})")
+        self.logger.info("Geometries simplified (tolerance=%s)", tolerance)
 
     def filter_features(self, property_name: str, value: Any):
         filtered = []
@@ -99,7 +102,7 @@ class GeoDataTransformer:
 
         self.features = filtered
 
-        print(f"Filtered features count: {len(filtered)}")
+        self.logger.info("Filtered features count: %s", len(filtered))
 
     def enrich_features(self):
         """
@@ -131,7 +134,7 @@ class GeoDataTransformer:
 
         self.features = enriched
 
-        print("Feature enrichment completed")
+        self.logger.info("Feature enrichment completed")
 
     def validate_geometries(self):
         valid = 0
@@ -145,10 +148,8 @@ class GeoDataTransformer:
             else:
                 invalid += 1
 
-        print("\nGeometry Validation")
-        print("-------------------")
-        print(f"Valid geometries:   {valid}")
-        print(f"Invalid geometries: {invalid}")
+        self.logger.info("Geometry validation completed")
+        self.logger.info("Valid: %s | Invalid: %s", valid, invalid)
 
     def dataset_statistics(self):
         rows = []
@@ -164,9 +165,8 @@ class GeoDataTransformer:
 
         df = pd.DataFrame(rows)
 
-        print("\nDataset Statistics")
-        print("------------------")
-        print(df.describe(include="all"))
+        self.logger.info("Dataset statistics generated")
+        self.logger.info("\n%s", df.describe(include="all"))
 
         return df
 
@@ -179,7 +179,7 @@ class GeoDataTransformer:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(output, f, indent=2)
 
-        print(f"GeoJSON exported -> {output_path}")
+        self.logger.info("GeoJSON exported -> %s", output_path)
 
     def export_csv(self, output_path: str):
         rows = []
@@ -188,7 +188,6 @@ class GeoDataTransformer:
             row = feature.get("properties", {}).copy()
 
             geometry = shape(feature["geometry"])
-
             row["geometry_type"] = geometry.geom_type
 
             rows.append(row)
@@ -197,4 +196,4 @@ class GeoDataTransformer:
 
         df.to_csv(output_path, index=False)
 
-        print(f"CSV exported -> {output_path}")
+        self.logger.info("CSV exported -> %s", output_path)

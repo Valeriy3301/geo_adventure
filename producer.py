@@ -1,4 +1,7 @@
-from queue import RabbitMQClient
+from core.mq_client import RabbitMQClient
+from core.logger import get_logger
+
+logger = get_logger("geo-producer")
 
 mq = RabbitMQClient(host="localhost")
 
@@ -9,4 +12,4 @@ mq.publish({
     "simplify_tolerance": 10
 })
 
-print("Job sent")
+logger.info("Job sent to RabbitMQ")

@@ -1,5 +1,10 @@
 import json
 
+from core.logger import get_logger
+
+
+logger = get_logger("geo-sample-generator")
+
 
 def generate_sample_geojson(output_path: str):
     sample = {
@@ -49,4 +54,5 @@ def generate_sample_geojson(output_path: str):
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(sample, f, indent=2)
 
-    print(f"Sample GeoJSON generated -> {output_path}")
+
+    logger.info("Sample GeoJSON generated -> %s", output_path)

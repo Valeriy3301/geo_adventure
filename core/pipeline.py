@@ -2,6 +2,8 @@ from typing import Dict, Any
 
 from core.clustering import GeoClusterer
 
+from core.logger import get_logger
+
 
 class GeoPipeline:
     """
@@ -11,6 +13,7 @@ class GeoPipeline:
     def __init__(self, transformer, cache=None):
         self.transformer = transformer
         self.cache = cache
+        self.logger = get_logger("geo-pipeline")
 
     def run(self, job: Dict[str, Any]):
         input_file = job["input_file"]
@@ -41,10 +44,10 @@ class GeoPipeline:
             cached = self.cache.get(cache_key)
 
             if cached:
-                print("CACHE HIT -> skipping processing")
+                self.logger.info("CACHE HIT -> skipping processing")
                 return cached
 
-        print("\n=== GEO PIPELINE STARTED ===\n")
+        self.logger.info("\n=== GEO PIPELINE STARTED ===\n")
 
         self.transformer.load_geojson(input_file)
 
@@ -72,7 +75,7 @@ class GeoPipeline:
                 self.transformer.features
             )
 
-            print("Clustering completed")
+            self.logger.info("Clustering completed")
 
         if enable_stats:
             self.transformer.dataset_statistics()
@@ -95,6 +98,6 @@ class GeoPipeline:
         if self.cache:
             self.cache.set(cache_key, result)
 
-        print("\n=== GEO PIPELINE FINISHED ===\n")
+        self.logger.info("\n=== GEO PIPELINE FINISHED ===\n")
 
         return result

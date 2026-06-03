@@ -45,35 +45,35 @@ pipeline:
 
   todo:
     architecture:
-      - "refactor into multi-stage DAG"
-      - "retry + dead-letter queue handling in rabbit"
-      - "add worker pool instead of single worker"
-      - "orchestration layer needed?"
+      - "refactor into multi-stage DAG (5)"
+      - "retry + dead-letter queue handling in rabbit (5)"
+      - "add worker pool instead of single worker (2)"
+      - "orchestration layer needed? (3)"
 
     processing:
-      - "support large GeoJSON streaming (no full in-memory load)"
-      - "geometry repair step (fix invalid polygons automatically)"
-      - "coordination control"
+      - "support large GeoJSON streaming (no full in-memory load) (8)"
+      - "geometry repair step (fix invalid polygons automatically) (3)"
+      - "coordination control (1)"
 
     storage:
-      - "persist results into PostGIS for spatial querying (might be useful later)"
+      - "persist results into PostGIS for spatial querying (might be useful later) (13)"
 
     performance:
-      - "multiprocessing + vectorization"
-      - "cache transformation steps in Redis"
-      - "benchmark Shapely vs GeoPandas for large datasets"
+      - "multiprocessing + vectorization (5)"
+      - "cache transformation steps in Redis (3)"
+      - "benchmark Shapely vs GeoPandas for large datasets (3)"
 
     observability:
-      - "add structured simple logging"
-      - "add metrics"
-      - "Prometheus + Grafana dashboards"
-      - "track failed jobs with correlation ids"
+      - "add structured simple logging (2)"
+      - "add metrics (3)"
+      - "Prometheus + Grafana dashboards (5)"
+      - "track failed jobs with correlation ids (2)"
 
     api:
-      - "FastAPI service for job submission for further development"
+      - "FastAPI service for job submission for further development (8)"
 
     devx:
-      - "add pytest suite for GeoDataTransformer"
-      - "add pre-commit hooks (lint + format)"
-      - "add CI pipeline validation for sample GeoJSON"
-      - "generate type hints for all pipeline stages"
+      - "add pytest suite for GeoDataTransformer (3)"
+      - "add pre-commit hooks (lint + format) (1)"
+      - "add CI pipeline validation for sample GeoJSON (2)"
+      - "generate type hints for all pipeline stages (3)"
