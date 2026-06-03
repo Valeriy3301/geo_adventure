@@ -64,7 +64,7 @@ pipeline:
       - "benchmark Shapely vs GeoPandas for large datasets (3)"
 
     observability:
-      - "add structured simple logging (2)"
+      - "add structured simple logging (2) ✔"
       - "add metrics (3)"
       - "Prometheus + Grafana dashboards (5)"
       - "track failed jobs with correlation ids (2)"
@@ -73,7 +73,7 @@ pipeline:
       - "FastAPI service for job submission for further development (8)"
 
     devx:
-      - "add pytest suite for GeoDataTransformer (3)"
+      - "add pytest suite for GeoDataTransformer (3) ✔"
       - "add pre-commit hooks (lint + format) (1)"
       - "add CI pipeline validation for sample GeoJSON (2)"
       - "generate type hints for all pipeline stages (3)"
