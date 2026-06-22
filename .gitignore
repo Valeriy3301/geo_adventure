@@ -20,3 +20,7 @@ todo.txt
 docker-compose.override.yml
 *.pid
 *.sock
+
+.mypy_cache/
+.pytest_cache/
+.pre-commit-config.yaml

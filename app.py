@@ -1,22 +1,18 @@
 import json
 import sys
 
-from core.transformer import GeoDataTransformer
 from core.pipeline import GeoPipeline
 from core.sample_data import generate_sample_geojson
-
-from infra.redis_client import RedisCache
+from core.transformer import GeoDataTransformer
 from infra.rabbitmq_client import RabbitMQConsumer
+from infra.redis_client import RedisCache
 
 
 def create_pipeline():
     cache = RedisCache()
     transformer = GeoDataTransformer()
 
-    return GeoPipeline(
-        transformer=transformer,
-        cache=cache
-    )
+    return GeoPipeline(transformer=transformer, cache=cache)
 
 
 def worker_callback(ch, method, properties, body):
@@ -47,12 +43,14 @@ def run_local():
 
     pipeline = create_pipeline()
 
-    pipeline.run({
-        "input_file": input_file,
-        "output_geojson": output_geojson,
-        "output_csv": output_csv,
-        "simplify_tolerance": 10
-    })
+    pipeline.run(
+        {
+            "input_file": input_file,
+            "output_geojson": output_geojson,
+            "output_csv": output_csv,
+            "simplify_tolerance": 10,
+        }
+    )
 
 
 if __name__ == "__main__":

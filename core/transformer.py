@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from shapely.geometry import shape, mapping
-from shapely.ops import transform
 from pyproj import Transformer
+from shapely.geometry import mapping, shape
+from shapely.ops import transform
 
 from core.logger import get_logger
 
@@ -44,27 +44,22 @@ class GeoDataTransformer:
         self.logger.info("Loaded %s features", len(self.features))
 
     def transform_crs(self, source_epsg: str, target_epsg: str):
-        transformer = Transformer.from_crs(
-            source_epsg,
-            target_epsg,
-            always_xy=True
-        )
+        transformer = Transformer.from_crs(source_epsg, target_epsg, always_xy=True)
 
         transformed = []
 
         for feature in self.features:
             geometry = shape(feature["geometry"])
 
-            transformed_geometry = transform(
-                transformer.transform,
-                geometry
-            )
+            transformed_geometry = transform(transformer.transform, geometry)
 
-            transformed.append({
-                "type": "Feature",
-                "properties": feature.get("properties", {}),
-                "geometry": mapping(transformed_geometry),
-            })
+            transformed.append(
+                {
+                    "type": "Feature",
+                    "properties": feature.get("properties", {}),
+                    "geometry": mapping(transformed_geometry),
+                }
+            )
 
         self.features = transformed
 
@@ -76,16 +71,15 @@ class GeoDataTransformer:
         for feature in self.features:
             geometry = shape(feature["geometry"])
 
-            simplified_geometry = geometry.simplify(
-                tolerance,
-                preserve_topology=True
-            )
+            simplified_geometry = geometry.simplify(tolerance, preserve_topology=True)
 
-            simplified.append({
-                "type": "Feature",
-                "properties": feature.get("properties", {}),
-                "geometry": mapping(simplified_geometry),
-            })
+            simplified.append(
+                {
+                    "type": "Feature",
+                    "properties": feature.get("properties", {}),
+                    "geometry": mapping(simplified_geometry),
+                }
+            )
 
         self.features = simplified
 
@@ -126,11 +120,13 @@ class GeoDataTransformer:
             properties["centroid_x"] = geometry.centroid.x
             properties["centroid_y"] = geometry.centroid.y
 
-            enriched.append({
-                "type": "Feature",
-                "properties": properties,
-                "geometry": mapping(geometry),
-            })
+            enriched.append(
+                {
+                    "type": "Feature",
+                    "properties": properties,
+                    "geometry": mapping(geometry),
+                }
+            )
 
         self.features = enriched
 
@@ -157,11 +153,13 @@ class GeoDataTransformer:
         for feature in self.features:
             geometry = shape(feature["geometry"])
 
-            rows.append({
-                "geometry_type": geometry.geom_type,
-                "area": geometry.area,
-                "length": geometry.length,
-            })
+            rows.append(
+                {
+                    "geometry_type": geometry.geom_type,
+                    "area": geometry.area,
+                    "length": geometry.length,
+                }
+            )
 
         df = pd.DataFrame(rows)
 
@@ -171,10 +169,7 @@ class GeoDataTransformer:
         return df
 
     def export_geojson(self, output_path: str):
-        output = {
-            "type": "FeatureCollection",
-            "features": self.features
-        }
+        output = {"type": "FeatureCollection", "features": self.features}
 
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(output, f, indent=2)

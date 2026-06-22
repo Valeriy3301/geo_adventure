@@ -1,7 +1,6 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 from core.clustering import GeoClusterer
-
 from core.logger import get_logger
 
 
@@ -53,27 +52,17 @@ class GeoPipeline:
 
         self.transformer.validate_geometries()
 
-        self.transformer.transform_crs(
-            crs_source,
-            crs_target
-        )
+        self.transformer.transform_crs(crs_source, crs_target)
 
-        self.transformer.simplify_geometries(
-            simplify_tolerance
-        )
+        self.transformer.simplify_geometries(simplify_tolerance)
 
         if enable_enrichment:
             self.transformer.enrich_features()
 
         if enable_clustering:
-            clusterer = GeoClusterer(
-                eps=cluster_eps,
-                min_samples=cluster_min_samples
-            )
+            clusterer = GeoClusterer(eps=cluster_eps, min_samples=cluster_min_samples)
 
-            self.transformer.features = clusterer.cluster(
-                self.transformer.features
-            )
+            self.transformer.features = clusterer.cluster(self.transformer.features)
 
             self.logger.info("Clustering completed")
 
@@ -88,10 +77,7 @@ class GeoPipeline:
             "input_file": input_file,
             "output_geojson": output_geojson,
             "output_csv": output_csv,
-            "crs": {
-                "source": crs_source,
-                "target": crs_target
-            },
+            "crs": {"source": crs_source, "target": crs_target},
             "clustering_enabled": enable_clustering,
         }
 

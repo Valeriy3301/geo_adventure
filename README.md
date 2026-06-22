@@ -53,3 +53,14 @@ Run the full test suite using pytest:
 
 ```bash
 pytest -q (pytest -v)
+
+## Code Quality
+
+This project uses pre-commit hooks for automatic formatting and linting.
+
+Install hooks:
+
+```bash
+pre-commit install
+
+pre-commit run --all-files (manual check)

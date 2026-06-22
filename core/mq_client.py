@@ -1,4 +1,5 @@
 import json
+
 import pika
 
 
@@ -22,9 +23,7 @@ class RabbitMQClient:
             exchange="",
             routing_key=self.queue_name,
             body=body,
-            properties=pika.BasicProperties(
-                delivery_mode=2
-            ),
+            properties=pika.BasicProperties(delivery_mode=2),
         )
 
     def close(self):

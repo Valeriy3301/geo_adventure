@@ -19,7 +19,8 @@ def test_pipeline_runs(tmp_path):
     output_csv = tmp_path / "out.csv"
 
     # minimal geo sample
-    input_file.write_text("""
+    input_file.write_text(
+        """
     {
       "type": "FeatureCollection",
       "features": [
@@ -33,19 +34,19 @@ def test_pipeline_runs(tmp_path):
         }
       ]
     }
-    """)
-
-    pipeline = GeoPipeline(
-        transformer=GeoDataTransformer(),
-        cache=FakeCache()
+    """
     )
 
-    result = pipeline.run({
-        "input_file": str(input_file),
-        "output_geojson": str(output_geojson),
-        "output_csv": str(output_csv),
-        "simplify_tolerance": 1
-    })
+    pipeline = GeoPipeline(transformer=GeoDataTransformer(), cache=FakeCache())
+
+    result = pipeline.run(
+        {
+            "input_file": str(input_file),
+            "output_geojson": str(output_geojson),
+            "output_csv": str(output_csv),
+            "simplify_tolerance": 1,
+        }
+    )
 
     assert result["status"] == "completed"
     assert output_geojson.exists()

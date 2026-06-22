@@ -1,15 +1,11 @@
-import redis
 import json
+
+import redis
 
 
 class RedisClient:
     def __init__(self, host="localhost", port=6379, db=0):
-        self.r = redis.Redis(
-            host=host,
-            port=port,
-            db=db,
-            decode_responses=True
-        )
+        self.r = redis.Redis(host=host, port=port, db=db, decode_responses=True)
 
     def get(self, key):
         val = self.r.get(key)

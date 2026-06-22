@@ -8,3 +8,7 @@ shapely
 redis
 scikit-learn
 numpy
+pre-commit
+black
+isort
+flake8

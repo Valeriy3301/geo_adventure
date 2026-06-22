@@ -30,10 +30,7 @@ class GeoClusterer:
         if len(coords) == 0:
             return []
 
-        model = DBSCAN(
-            eps=self.eps,
-            min_samples=self.min_samples
-        )
+        model = DBSCAN(eps=self.eps, min_samples=self.min_samples)
 
         labels = model.fit_predict(coords)
 

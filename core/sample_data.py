@@ -2,7 +2,6 @@ import json
 
 from core.logger import get_logger
 
-
 logger = get_logger("geo-sample-generator")
 
 
@@ -12,10 +11,7 @@ def generate_sample_geojson(output_path: str):
         "features": [
             {
                 "type": "Feature",
-                "properties": {
-                    "name": "Region A",
-                    "category": "urban"
-                },
+                "properties": {"name": "Region A", "category": "urban"},
                 "geometry": {
                     "type": "Polygon",
                     "coordinates": [
@@ -31,10 +27,7 @@ def generate_sample_geojson(output_path: str):
             },
             {
                 "type": "Feature",
-                "properties": {
-                    "name": "Region B",
-                    "category": "industrial"
-                },
+                "properties": {"name": "Region B", "category": "industrial"},
                 "geometry": {
                     "type": "Polygon",
                     "coordinates": [
@@ -53,6 +46,5 @@ def generate_sample_geojson(output_path: str):
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(sample, f, indent=2)
-
 
     logger.info("Sample GeoJSON generated -> %s", output_path)
