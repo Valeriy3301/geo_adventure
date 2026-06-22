@@ -74,6 +74,6 @@ pipeline:
 
     devx:
       - "add pytest suite for GeoDataTransformer (3) ✔"
-      - "add pre-commit hooks (lint + format) (1)"
+      - "add pre-commit hooks (lint + format) (1) ✔"
       - "add CI pipeline validation for sample GeoJSON (2)"
       - "generate type hints for all pipeline stages (3)"
